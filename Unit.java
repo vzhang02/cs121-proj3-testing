@@ -37,7 +37,7 @@ public class Unit {
         }
         Method[] meths = c.getMethods();
         Map<String, Throwable> results = new HashMap<>();
-        sortMethods(meths);
+        processMethods(meths);
         executeMethods(results);
         return results;
     }
@@ -48,7 +48,7 @@ public class Unit {
     }
 
     /* Adds all methods to corresponding lists and sorts list */
-    private static void sortMethods(Method[] meths) {
+    private static void processMethods(Method[] meths) {
         for (Method m : meths) {
             Annotation[] a = m.getAnnotations();
             if (a.length > 1) { throw new IllegalArgumentException(); }
@@ -57,12 +57,18 @@ public class Unit {
                 tests.add(m);
             } else if (a[0] instanceof Before) {
                 before.add(m);
-            } else if (a[0] instanceof BeforeClass) {
-                beforeClass.add(m);
             } else if (a[0] instanceof After) {
                 after.add(m);
-            } else if (a[0] instanceof AfterClass) {
-                afterClass.add(m);
+            } else {
+                if (!Modifier.isStatic(m.getModifiers())) {
+                    throw new IllegalArgumentException("Before_Class or After_Class method not static\n");
+                }
+                
+                if (a[0] instanceof AfterClass) {
+                    afterClass.add(m);
+                } else {
+                    beforeClass.add(m);
+                }
             }
         }
         sort();
@@ -96,20 +102,17 @@ public class Unit {
         } else {
             for (Method m : tests) {
                 runMethods(results, MethType.BEFORE);
-                try {
-                    m.invoke(o, (Object[])null);
-                } catch (InvocationTargetException e) {
-                    results.put(m.getName(), e.getCause());
-                } catch (IllegalAccessException e) {
-                    throw new IllegalAccessError();
-                }
+                run(results, m);
                 runMethods(results, MethType.AFTER);
             }
             meths = null;
         }
+        for (Method m : meths) {
+            run(results, m);
+        }
 
     }
-    private static void runMethod(Map<String, Throwable> results, Method m) {
+    private static void run(Map<String, Throwable> results, Method m) {
         try {
             m.invoke(o, (Object[])null);
         } catch (InvocationTargetException e) {
