@@ -29,17 +29,22 @@ public class Unit {
 
     /* Runs all class test methods */
     public static Map<String, Throwable> testClass(String name) {
-        Class<?> c = name.getClass();
         try {
-            o = c.getConstructor().newInstance();
-        } catch (Exception e) {
-            throw new IllegalArgumentException(); 
+            Class<?> c = Class.forName(name);
+            try {
+                o = c.getConstructor().newInstance();
+            } catch (Exception e) {
+                throw new IllegalArgumentException(); 
+            }
+            Method[] meths = c.getMethods();
+            Map<String, Throwable> results = new HashMap<>();
+            processMethods(meths);
+            executeMethods(results);
+            return results;
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("class not found");
         }
-        Method[] meths = c.getMethods();
-        Map<String, Throwable> results = new HashMap<>();
-        processMethods(meths);
-        executeMethods(results);
-        return results;
+        
     }
 
     /* Runs @Property methods */
@@ -50,24 +55,27 @@ public class Unit {
     /* Adds all methods to corresponding lists and sorts list */
     private static void processMethods(Method[] meths) {
         for (Method m : meths) {
+            System.out.println(m);
             Annotation[] a = m.getAnnotations();
-            if (a.length > 1) { throw new IllegalArgumentException(); }
-
-            if (a[0] instanceof Test) {
-                tests.add(m);
-            } else if (a[0] instanceof Before) {
-                before.add(m);
-            } else if (a[0] instanceof After) {
-                after.add(m);
-            } else {
-                if (!Modifier.isStatic(m.getModifiers())) {
-                    throw new IllegalArgumentException("Before_Class or After_Class method not static\n");
-                }
-                
-                if (a[0] instanceof AfterClass) {
-                    afterClass.add(m);
-                } else {
-                    beforeClass.add(m);
+            if (a.length > 1) { 
+                throw new IllegalArgumentException(); }
+            else if (a.length == 1) { 
+                if (a[0] instanceof Test) {
+                    tests.add(m);
+                } else if (a[0] instanceof Before) {
+                    before.add(m);
+                } else if (a[0] instanceof After) {
+                    after.add(m);
+                } else if (a[0] instanceof BeforeClass || a[0] instanceof AfterClass) {
+                    if (!Modifier.isStatic(m.getModifiers())) {
+                        throw new IllegalArgumentException("Before_Class or After_Class method not static\n");
+                    }
+                    
+                    if (a[0] instanceof AfterClass) {
+                        afterClass.add(m);
+                    } else {
+                        beforeClass.add(m);
+                    }
                 }
             }
         }
@@ -83,12 +91,14 @@ public class Unit {
         Collections.sort(afterClass, new MethComparator());
     }
 
+    /* executes all methods in correct order */
     private static void executeMethods(Map<String, Throwable> results) {
         runMethods(results, MethType.BEFORECLASS);
         runMethods(results, MethType.TESTS);
         runMethods(results, MethType.AFTERCLASS);
     }
 
+    /* runs the specified methods */
     private static void runMethods(Map<String, Throwable> results, MethType mt) {
         List<Method> meths;
         if (mt == MethType.BEFORECLASS) {
@@ -102,21 +112,30 @@ public class Unit {
         } else {
             for (Method m : tests) {
                 runMethods(results, MethType.BEFORE);
-                run(results, m);
+                run(results, m, true);
                 runMethods(results, MethType.AFTER);
             }
-            meths = null;
+            return;
         }
         for (Method m : meths) {
-            run(results, m);
+            run(results, m, false);
         }
 
     }
-    private static void run(Map<String, Throwable> results, Method m) {
+
+    /* invokes the method and catches any exceptions */
+    private static void run(Map<String, Throwable> results, Method m, boolean test) {
         try {
             m.invoke(o, (Object[])null);
+            if (test) {
+                results.put(m.getName(), null);
+            }
         } catch (InvocationTargetException e) {
-            results.put(m.getName(), e.getCause());
+            if (test) {
+                results.put(m.getName(), e.getCause());
+            } else {
+                throw new RuntimeException(e.getCause());
+            }
         } catch (IllegalAccessException e) {
             throw new IllegalAccessError();
         }
