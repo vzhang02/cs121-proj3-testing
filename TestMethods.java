@@ -23,19 +23,17 @@ public class TestMethods {
     public TestMethods(String name) {
         try {
             c = Class.forName(name);
+            o = c.getConstructor().newInstance();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Class not found");
-        }
-        Method[] meths = c.getMethods();
-        try {
-            o = c.getConstructor().newInstance();
         } catch (Exception e) {
             throw new IllegalArgumentException(); 
         }
+        Method[] meths = c.getMethods();
         processMethods(meths);
     }
     /* Adds all methods to corresponding lists and sorts list */
-    public static void processMethods(Method[] meths) {
+    private static void processMethods(Method[] meths) {
         for (Method m : meths) {
             Annotation[] a = m.getAnnotations();
             if (a.length > 1) { 
@@ -64,7 +62,7 @@ public class TestMethods {
     }   
 
     /* sorts all lists */
-    public static void sort() {
+    private static void sort() {
         MethodComparator m = new MethodComparator();
         Collections.sort(tests, m);
         Collections.sort(before, m);
@@ -81,7 +79,7 @@ public class TestMethods {
     }
 
     /* runs the specified methods */
-    public static void runMethods(Map<String, Throwable> results, MethType mt) {
+    private static void runMethods(Map<String, Throwable> results, MethType mt) {
         List<Method> meths;
         if (mt == MethType.BEFORECLASS) {
             meths = beforeClass;
@@ -106,7 +104,7 @@ public class TestMethods {
     }
 
     /* invokes the method and catches any exceptions */
-    public static void run(Map<String, Throwable> results, Method m, boolean test) {
+    private static void run(Map<String, Throwable> results, Method m, boolean test) {
         try {
             m.invoke(o, (Object[])null);
             if (test) {

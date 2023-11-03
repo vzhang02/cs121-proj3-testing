@@ -26,10 +26,10 @@ public class Unit {
             // }
             Method[] meths = c.getMethods();
             Map<String, Object[]> results = new HashMap<>();
-            PropetyMethods.processMethods(meths);
+            PropertyMethods.processMethods(meths);
             return results;
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("class not found");
+            throw new RuntimeException("Class not found");
         }
     }
 
