@@ -20,7 +20,7 @@ public class PropertyMethods {
         processMethods(meths);
     }
     
-    public static void processMethods(Method[] meths) {
+    private static void processMethods(Method[] meths) {
         for (Method m : meths) {
             Annotation[] a = m.getAnnotations();
             if (a.length == 1) {
@@ -30,5 +30,9 @@ public class PropertyMethods {
             }
         }
         Collections.sort(property, new MethodComparator());
+    }
+
+    public void executeMethods(Map<String, Object[]> results) {
+        
     }
 }
