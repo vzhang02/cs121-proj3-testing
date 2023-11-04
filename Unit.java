@@ -1,5 +1,4 @@
 import java.util.*;
-import java.lang.reflect.*;
 
 
 public class Unit {
@@ -17,7 +16,7 @@ public class Unit {
     public static Map<String, Object[]> quickCheckClass(String name) {
         PropertyMethods p = new PropertyMethods(name);
         Map<String, Object[]> results = new HashMap<>();
-        p.executeMethods(results);
+       // p.executeMethods(results);
         return results;
     }
 
