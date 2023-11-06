@@ -35,14 +35,14 @@ public class TestQuickCheck {
         return true;
     }
 
-    // @Property
-    // public boolean tooManyLists(@ListLength(min=0, max=2) List<@ListLength(min=0, max=2) List<@ListLength(min=0, max=2) List<@ListLength(min=0, max=2) List<@IntRange(min=5, max=7) Integer>>>> l) {
-    //     if (b) {
-    //         System.out.println("ruh roh");
-    //         System.out.println(l.toString());
-    //     }
-    //     return true;
-    // }
+    @Property
+    public boolean tooManyLists(@ListLength(min=0, max=2) List<@ListLength(min=0, max=2) List<@ListLength(min=0, max=2) List<@IntRange(min=5, max=7) Integer>>> l) {
+        if (b) {
+            System.out.println("ruh roh");
+            System.out.println(l.toString());
+        }
+        return true;
+    }
 
     @Property 
     public boolean testFoo(@ForAll(name="genIntSet", times=10) Object o) {
