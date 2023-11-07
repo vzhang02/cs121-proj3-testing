@@ -1,3 +1,5 @@
+import java.util.List;
+
 public class TestObj {
     private String id = "testObj";
 
@@ -11,6 +13,88 @@ public class TestObj {
 
     public String getID() {
         return this.id;
+    }
+    static final boolean DEBUG = true;
+
+    @BeforeClass
+    public static void beforeClass1() {
+        if (DEBUG) {
+            System.err.println("beforeClass1");
+        }
+    }
+
+    @AfterClass
+    public static void afterClass1() {
+        if (DEBUG) {
+            System.err.println("afterClass1");
+        }
+    }
+
+    @Test
+    public static void another_test() {
+        if (DEBUG) { 
+            System.err.println("another_test");
+        }
+        throw new RuntimeException("hey this was an intentional failure");
+    }
+
+    @Test
+    public static void assertingObjectAffirmativeTest() {
+        Character c = 'l';
+
+        Assertion.assertThat((Object)c).isEqualTo('l').isNotNull().isInstanceOf(Character.class);
+
+        Assertion.assertThat((Object)null).isNull();
+    }
+
+    @Test
+    public static void assertingObjectNegativeTest() {
+        Character c = 'z';
+
+        Assertion.assertThat((Object)c).isEqualTo('a');
+    }
+
+    @Test
+    public static void assertingStringAffirmativeTest() {
+        String s = "hello";
+        Assertion.assertThat(s).isNotNull().isEqualTo("hello").isNotEqualTo("hello!").contains("lo").startsWith("hell");
+        Assertion.assertThat(null).isNull();
+    }
+
+    @Test
+    public static void assertingStringNegativeTest() {
+        String s = "hello";
+        Assertion.assertThat(s).isNotNull().contains("ol");
+    }
+
+    @Test
+    public static void test1() {
+        Assertion.assertThat(true).isFalse();
+    }
+
+    @Test
+    public static void test2() {
+        assert false;
+    }
+
+    @Test
+    public static void assertingBooleanAffirmativeTest() {
+        boolean b = true;
+        Assertion.assertThat(b).isEqualTo(true);
+        Assertion.assertThat(false).isEqualTo(false);
+        Assertion.assertThat(b).isTrue();
+    }
+
+    @Test
+    public static void assertingIntegerAffirmativeTest() {
+        int i = 5;
+        Assertion.assertThat(i).isEqualTo(5).isGreaterThan(0).isLessThan(10).isGreaterThan(-100);
+    }
+
+    @Test
+    public static void assertingIntegerNegativeTest() {
+        int i = 5;
+        Assertion.assertThat(i).isEqualTo(5).isGreaterThan(0).isLessThan(10).isGreaterThan(100);
     }
 
     @Test
@@ -132,6 +216,7 @@ public class TestObj {
     @Before
     public void test_before_2() {
         System.out.println("TestObj:test_before_2");
+        throw new RuntimeException("ruh roh");
     }
 
     @Test

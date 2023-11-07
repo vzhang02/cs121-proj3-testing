@@ -3,11 +3,11 @@ import java.lang.reflect.*;
 import java.lang.annotation.Annotation;
 
 public class TestMethods {
-    private static List<Method> tests = new ArrayList<>();
-    private static List<Method> before = new ArrayList<>();
-    private static List<Method> beforeClass = new ArrayList<>();
-    private static List<Method> after = new ArrayList<>();
-    private static List<Method> afterClass = new ArrayList<>();
+    private static List<Method> tests;
+    private static List<Method> before;
+    private static List<Method> beforeClass;
+    private static List<Method> after;
+    private static List<Method> afterClass;
     private static Object o;
     private static Class<?> c;
     
@@ -20,14 +20,25 @@ public class TestMethods {
         AFTERCLASS
     }
 
+    private class BadClassException extends RuntimeException {}
+
     public TestMethods(String name) {
-        try {
+       try {
             c = Class.forName(name);
             o = c.getConstructor().newInstance();
+            tests = new ArrayList<>();
+            before = new ArrayList<>();
+            beforeClass = new ArrayList<>();
+            after = new ArrayList<>();
+            afterClass = new ArrayList<>();
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Class not found");
+            System.out.println(e.getCause());
+            e.printStackTrace();
+            throw new BadClassException();
         } catch (Exception e) {
-            throw new IllegalArgumentException(); 
+            System.out.println(e.getCause());
+            e.printStackTrace();
+            throw new RuntimeException(); 
         }
         Method[] meths = c.getMethods();
         processMethods(meths);
@@ -36,9 +47,8 @@ public class TestMethods {
     private static void processMethods(Method[] meths) {
         for (Method m : meths) {
             Annotation[] a = m.getAnnotations();
-            if (a.length > 1) { 
-                throw new IllegalArgumentException(); }
-            else if (a.length == 1) { 
+            int numAnnotations = annotationCounter(a);
+            if (numAnnotations == 1) {
                 if (a[0] instanceof Test) {
                     tests.add(m);
                 } else if (a[0] instanceof Before) {
@@ -56,10 +66,26 @@ public class TestMethods {
                         beforeClass.add(m);
                     }
                 }
+            } else if (numAnnotations > 1) { 
+                throw new RuntimeException("Too many annotations");
             }
         }
         sort();
     }   
+
+    private static int annotationCounter(Annotation[] as) {
+        int counter = 0;
+        for (Annotation a : as) {
+            if (a instanceof Test
+                || a instanceof Before
+                || a instanceof After
+                || a instanceof BeforeClass
+                || a instanceof AfterClass) {
+                    counter++;
+                } 
+        }
+        return counter;
+    }
 
     /* sorts all lists */
     private static void sort() {
@@ -92,32 +118,34 @@ public class TestMethods {
         } else {
             for (Method m : tests) {
                 runMethods(results, MethType.BEFORE);
-                run(results, m, true);
+                runTestMethod(results, m);
                 runMethods(results, MethType.AFTER);
             }
             return;
         }
         for (Method m : meths) {
-            run(results, m, false);
+            run(m);
         }
-
     }
-
-    /* invokes the method and catches any exceptions */
-    private static void run(Map<String, Throwable> results, Method m, boolean test) {
+    /* invokes the non-Test Methods */
+    private static void run(Method m) {
         try {
-            m.invoke(o, (Object[])null);
-            if (test) {
-                results.put(m.getName(), null);
-            }
-        } catch (InvocationTargetException e) {
-            if (test) {
-                results.put(m.getName(), e.getCause());
-            } else {
-                throw new RuntimeException(e.getCause());
-            }
+            m.invoke(o);
         } catch (IllegalAccessException e) {
-            throw new IllegalAccessError();
+            System.out.println(e.getCause());
+            throw new RuntimeException("access not allowed");
+        } catch (Exception e) {
+            System.out.print(e.getCause());
+            System.out.println(" was encountered while running non-TestMethods");
+        }
+    }
+    /* invokes the Test method and catches any exceptions */
+    private static void runTestMethod(Map<String, Throwable> results, Method m) {
+        try {
+            m.invoke(o);
+            results.put(m.getName(), null);
+        } catch (Exception ex) {
+            results.put(m.getName(), ex.getCause());
         }
     }
 }

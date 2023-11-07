@@ -12,10 +12,11 @@ public class PropertyMethods {
         try {
             c = Class.forName(name);
             o = c.getConstructor().newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Class not found");
+            property = new ArrayList<>();
         } catch (Exception e) {
-            throw new IllegalArgumentException();
+            System.err.println(e.getCause());
+            e.printStackTrace();
+            throw new RuntimeException(); 
         }
         Method[] meths = c.getMethods();
         processMethods(meths);
@@ -23,11 +24,9 @@ public class PropertyMethods {
     
     private static void processMethods(Method[] meths) {
         for (Method m : meths) {
-            Annotation[] a = m.getAnnotations();
-            if (a.length == 1) {
-                if (a[0] instanceof Property) {
-                    property.add(m);
-                }
+            Annotation a = m.getAnnotation(Property.class);
+            if (a != null) {
+                property.add(m);
             }
         }
         Collections.sort(property, new MethodComparator());
@@ -36,35 +35,28 @@ public class PropertyMethods {
     public void executeMethods(Map<String, Object[]> results) {
         for (Method m : property) {
             List<Object[]> params = getParams(m); 
-            int numTimes = params.size() < 100 ? params.size() : 100;
-            boolean res = false;
-            for (int i = 0; i < numTimes; i++) {
-                res = run(results, params, m, i);
-                if (!res) {
-                    break;
-                }
-            }
-            if (res) {
-                results.put(m.getName(), null);
-            }
+            results.put(m.getName(), run(params, m));
         }
     }
 
-    private static boolean run(Map<String, Object[]> results, List <Object[]> params, Method m, int time) {
-        Object[] args = params.get(time);
-        try {
-            Object res = m.invoke(o, args);
-            if (res instanceof Boolean && !(Boolean)res) {
-                results.put(m.getName(), args);
-                return false;
+    private static Object[] run(List<Object[]> params, Method m) {
+        int numTimes = params.size() < 100 ? params.size() : 100;
+        for (int i = 0; i < numTimes; i++) {
+            Object[] args = params.get(i);
+            try {
+                Object res = m.invoke(o, args);
+                if (res instanceof Boolean && !(Boolean)res) {
+                    return args;
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Access not allowed for this method");
+            } catch (Throwable e) {
+                System.out.println(e.getCause());
+                e.printStackTrace();
+                return args;
             }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Access not allowed for this method");
-        } catch (Throwable e) {
-            results.put(m.getName(), args);
-            return false; 
         }
-        return true; 
+        return null;
     }
 
     private static List<Object[]> getParams(Method m) {
@@ -115,12 +107,13 @@ public class PropertyMethods {
     private static void findListPermutations(List<List<Object>> args, List<Object> curr, List<Object> elems, int min, int max) {
         
         if (curr.size() == max) {
-            args.add(new ArrayList<>(curr));
-            // for (Object i : curr) {
-            //     System.out.print(i);
-            // }
-            // System.out.println();
+            if (! args.contains(curr)) {
+                args.add(new ArrayList<>(curr));
+            }
         } else {
+            if (min == 0 && curr.size() == 0) {
+                args.add(curr);
+            }
             for (int i = 0 ; i < elems.size() ; i++) { 
                 curr.add(elems.get(i)); 
                 if (curr.size() >= min) {
@@ -141,28 +134,31 @@ public class PropertyMethods {
             for (int i = 0; i < f.times(); i++) {
                 args.add(m.invoke(o, (Object[])null));
             }
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Method not found\n");
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Access not allowed\n");
-        }  catch (InvocationTargetException e) {
-            throw new RuntimeException("Method threw an exception\n");
-        }
-
+        } catch (Exception e) {
+            System.out.println(e.getCause());
+            e.printStackTrace();
+            throw new RuntimeException();
+        } 
         return args;
     }
 
     private static void findArgPermutations(List<Object[]> argPerms, List<List<Object>> argsLists,
                                             Object[] curr, int pos, int argNum, int max) {
-        if (curr.length == max) {
-            argPerms.add(Arrays.copyOf(curr, max));
-        } else {
-            for (int i = 0; i < argsLists.get(argNum).size(); i++) {
-                List<Object> l = argsLists.get(argNum);
-                curr[pos] = l.get(i);
-                findArgPermutations(argPerms, argsLists, curr, pos++, argNum++, max);
-                curr[pos] = null;
+        if (pos == max) {
+            Object[] deepCopy = new Object[max];
+            int count = 0;
+            for (Object o : curr) {
+                deepCopy[count] = o;
+                count++;
             }
+            argPerms.add(deepCopy);
+            return;
+        } 
+        for (int i = 0; i < argsLists.get(argNum).size(); i++) {
+            List<Object> l = argsLists.get(argNum);
+            curr[pos] = l.get(i);
+            findArgPermutations(argPerms, argsLists, curr, pos+1, argNum+1, max);
+            curr[pos] = null;
         }
     } 
 }

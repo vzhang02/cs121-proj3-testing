@@ -9,7 +9,7 @@ public class TestUnit {
         
         System.out.println("TESTING CLASS TESTOBJ\n");
         Map<String, Throwable> testClassResults = Unit.testClass("TestObj");
-
+        System.out.println(testClassResults);
         for (String testName : testClassResults.keySet()) {
             System.out.print(testName + ": ");
             System.out.println("\t" + testClassResults.get(testName));
@@ -17,7 +17,7 @@ public class TestUnit {
         System.out.println("\n\n********************************\n\n");
 
         System.out.println("TESTING CLASS TESTQUICKCHECK\n");
-        Map<String, Object[]> quickCheckResults = Unit.quickCheckClass("TestQuickCheck");
+        Map<String, Object[]> quickCheckResults = Unit.quickCheckClass("MathTest");
 
         for (String testName : quickCheckResults.keySet()) {
             System.out.print(testName + ": ");

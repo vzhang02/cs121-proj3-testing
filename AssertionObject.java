@@ -32,7 +32,7 @@ public class AssertionObject {
         return this;
     }
 
-    public AssertionObject isInstanceof(Class<?> c) {
+    public AssertionObject isInstanceOf(Class<?> c) {
         if (!c.isInstance(o)) {
             throw new RuntimeException("this object is not an instance of the provided class");
         }
