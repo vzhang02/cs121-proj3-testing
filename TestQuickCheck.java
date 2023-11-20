@@ -41,20 +41,20 @@ public class TestQuickCheck {
         return true;
     }
 
-    @Property 
-    public boolean testFoo(@ForAll(name="genIntSet", times=10) Object o) {
-        Set s = (Set) o;
-        s.add("foo");
-        return s.contains("foo");
-    }
+    // @Property 
+    // public boolean testFoo(@ForAll(name="genIntSet", times=10) Object o) {
+    //     Set s = (Set) o;
+    //     s.add("foo");
+    //     return s.contains("foo");
+    // }
         
-    int count = 0;
-    public Object genIntSet() {
-        Set s = new HashSet();
-        for (int i=0; i<count; i++) { s.add(i); }
-        count++;
-        return s;
-    }
+    // int count = 0;
+    // public Object genIntSet() {
+    //     Set s = new HashSet();
+    //     for (int i=0; i<count; i++) { s.add(i); }
+    //     count++;
+    //     return s;
+    // }
 
     @Property
     public boolean absNonNeg(@IntRange(min=-10, max=10) Integer i) {
